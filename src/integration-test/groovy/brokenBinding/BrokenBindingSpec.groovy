@@ -3,15 +3,20 @@ import grails.gorm.transactions.Rollback
 import grails.testing.mixin.integration.Integration
 
 import geb.spock.*
+import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import okhttp3.Cookie
 import okhttp3.CookieJar
 import okhttp3.HttpUrl
+import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
 import okhttp3.Response
+import org.grails.web.json.JSONArray
+import org.grails.web.json.JSONObject
 import org.springframework.beans.factory.annotation.Value
+import spock.lang.Specification
 
 import java.util.concurrent.TimeUnit
 
@@ -20,21 +25,39 @@ import java.util.concurrent.TimeUnit
  */
 @Integration
 @Rollback
-class BrokenBindingSpec extends GebSpec {
+class BrokenBindingSpec extends Specification {
 
     String baseUrl;
     OkHttpClient client;
     @Value('${local.server.port}')
     Integer serverPort
 
-    void "test item"() {
+    void "test list"() {
+        def responseContent, responseBody;
+        LinkedHashMap exampleBody = [
+                name: 'John'
+        ];
+
+        baseUrl = "http://localhost:${serverPort}";
+        this.initUrl();
+        when:
+        responseContent = this.postJson("/example/list", exampleBody);
+        responseBody = new JSONObject(responseContent.responseJson);
+        println("responseBody: " + responseBody);
+
+        then:
+        responseContent.responseCode == 200;
+    }
+
+    void "test list with binding"() {
         def responseContent, responseBody;
 
         baseUrl = "http://localhost:${serverPort}";
         this.initUrl();
         when:
-        responseContent = this.getUrl("/example");
-        responseBody = new JsonSlurper().parseText(responseContent.responseJson);
+        responseContent = this.getUrl("/example/listWithBinding?name=Arnold");
+        responseBody = new JSONObject(responseContent.responseJson);
+        println("responseBody: " + responseBody);
 
         then:
         responseContent.responseCode == 200;
@@ -55,6 +78,35 @@ class BrokenBindingSpec extends GebSpec {
         response = client.newCall(request).execute();
         responseCode = response.code();
         responseJson = response.body()?.string();
+        response.close();
+        return [responseCode: responseCode, responseJson: responseJson];
+    }
+
+    def postJson(String url, LinkedHashMap bodyMap) {
+        String jsonRequestString;
+        RequestBody body;
+        okhttp3.Request request;
+        Response response;
+        JSONObject responseJson;
+        Integer responseCode;
+        String responseBody;
+
+        jsonRequestString = new JsonBuilder(bodyMap).toString()
+        body = RequestBody.create(MediaType.parse("application/json"), jsonRequestString);
+        request = new okhttp3.Request.Builder()
+                .url(baseUrl + url)
+                .method("POST", body)
+                .addHeader("Accept", "application/json")
+                .addHeader("Content-Type", "application/json")
+                .build();
+        response = client.newCall(request).execute();
+        responseCode = response.code();
+        responseBody = response.body()?.string();
+        try {
+            responseJson = new JSONObject(responseBody);
+        } catch (Exception e) {
+            responseJson = new JSONArray(responseBody);
+        }
         response.close();
         return [responseCode: responseCode, responseJson: responseJson];
     }

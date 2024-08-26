@@ -5,35 +5,28 @@ import grails.converters.JSON
 import grails.validation.Validateable
 
 class ExampleController implements Controller {
-    def index() {
-        redirect(action: 'list'); //chain
+
+    private void foobar() {
+        String cmd;
     }
 
     def list(ExampleSearchCommand cmd) {
-        Map retVal = ["works": "yes"];
-        String s = cmd.getClass().getName();
-        if (s?.contains("Example")) {
-            System.out.println("s is: " + s);
-        }
-        Class x = cmd.getClass();
-
-        render retVal as JSON;
+        Map retVal = ["name": cmd.name];
+        respond retVal;
     }
 
-    def edit() {
-        ExampleCommand cmd = new ExampleCommand() // TODO: Renaming this command variable will allow the list action to work
-        render "OK";
+    def listWithBinding() {
+        Map retVal = ["name": null];
+        ExampleSearchCommand cmd = new ExampleSearchCommand();
+
+        bindData(cmd, params)
+
+        retVal.name = cmd.name;
+        respond retVal;
     }
+
 }
 
-class ExampleSearchCommand implements Validateable {
-    String name
 
-    static boolean defaultNullable() {
-        true
-    }
-}
 
-class ExampleCommand implements Validateable {
-    String name
-}
+
