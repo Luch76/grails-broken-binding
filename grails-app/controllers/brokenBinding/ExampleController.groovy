@@ -11,7 +11,9 @@ class ExampleController implements Controller {
     }
 
     def list(ExampleSearchCommand cmd) {
-        Map retVal = ["name": cmd.name];
+        Map retVal = ["name": null];
+
+        retVal.name = cmd.name;
         respond retVal;
     }
 
