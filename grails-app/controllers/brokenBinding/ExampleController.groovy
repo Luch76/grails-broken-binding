@@ -1,31 +1,34 @@
 package brokenBinding
 
 import grails.artefact.Controller
+import grails.converters.JSON
 import grails.validation.Validateable
 
 class ExampleController implements Controller {
-    def index() {
-        redirect(action: 'list')
+
+    private void foobar() {
+        String cmd;
     }
 
     def list(ExampleSearchCommand cmd) {
-        [cmd: cmd]
+        Map retVal = ["name": null];
+
+        retVal.name = cmd.name;
+        respond retVal;
     }
 
-    def edit() {
-        ExampleCommand cmd = new ExampleCommand() // TODO: Renaming this command variable will allow the list action to work
-        [instance: cmd]
+    def listWithBinding() {
+        Map retVal = ["name": null];
+        ExampleSearchCommand cmd = new ExampleSearchCommand();
+
+        bindData(cmd, params)
+
+        retVal.name = cmd.name;
+        respond retVal;
     }
+
 }
 
-class ExampleSearchCommand implements Validateable {
-    String name
 
-    static boolean defaultNullable() {
-        true
-    }
-}
 
-class ExampleCommand implements Validateable {
-    String name
-}
+
